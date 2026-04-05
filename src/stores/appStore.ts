@@ -29,6 +29,7 @@ interface AppState {
   setProcessingProgress: (progress: number, message: string) => void;
   setSegments: (segments: Segment[]) => void;
   setPauseDuration: (ms: number) => void;
+  setCurrentSegmentIndex: (index: number) => void;
   setExporting: (exporting: boolean) => void;
 }
 
@@ -58,6 +59,8 @@ export const useAppStore = create<AppState>()((set) => ({
   setSegments: (segments) => set({ segments }),
 
   setPauseDuration: (ms) => set({ pauseDurationMs: ms }),
+
+  setCurrentSegmentIndex: (index) => set({ currentSegmentIndex: index }),
 
   setExporting: (exporting) => set({ isExporting: exporting }),
 }));

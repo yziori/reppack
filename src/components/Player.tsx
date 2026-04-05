@@ -2,6 +2,7 @@ import { Play, Pause, Square } from "lucide-react";
 
 interface PlayerProps {
   isPlaying: boolean;
+  isPaused: boolean;
   isLoaded: boolean;
   hasSegments: boolean;
   onPlay: () => void;
@@ -12,6 +13,7 @@ interface PlayerProps {
 
 export function Player({
   isPlaying,
+  isPaused,
   isLoaded,
   hasSegments,
   onPlay,
@@ -34,14 +36,14 @@ export function Player({
         <button
           className="rounded-lg bg-blue-600 p-2 text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
           disabled={!canPlay}
-          onClick={canPlay ? (isLoaded ? onResume : onPlay) : undefined}
+          onClick={isPaused ? onResume : onPlay}
         >
           <Play className="h-5 w-5" />
         </button>
       )}
       <button
         className="rounded-lg bg-gray-700 p-2 text-white transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
-        disabled={!isPlaying}
+        disabled={!isPlaying && !isPaused}
         onClick={onStop}
       >
         <Square className="h-4 w-4" />

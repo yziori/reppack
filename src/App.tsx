@@ -75,6 +75,7 @@ function App() {
           <div className="flex items-center gap-4">
             <Player
               isPlaying={player.isPlaying}
+              isPaused={player.isPaused}
               isLoaded={player.isLoaded}
               hasSegments={segments.length > 0}
               onPlay={handlePlay}

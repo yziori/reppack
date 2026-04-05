@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import type { Segment } from "../lib/types";
+import { useAppStore } from "../stores/appStore";
 
 interface UseAudioPlayerReturn {
   load: (filePath: string) => Promise<void>;
@@ -10,6 +11,7 @@ interface UseAudioPlayerReturn {
   stop: () => void;
   seekToSegment: (index: number) => void;
   isPlaying: boolean;
+  isPaused: boolean;
   currentSegment: number;
   isLoaded: boolean;
 }
@@ -23,8 +25,11 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const segmentTimingsRef = useRef<{ start: number; end: number }[]>([]);
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentSegment, setCurrentSegment] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const setCurrentSegmentIndex = useAppStore((s) => s.setCurrentSegmentIndex);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -94,6 +99,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       segmentTimingsRef.current = timings;
       playStartTimeRef.current = ctx.currentTime;
       setIsPlaying(true);
+      setIsPaused(false);
       setCurrentSegment(0);
 
       // Track current segment
@@ -109,6 +115,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         }
         if (found >= 0) {
           setCurrentSegment(found);
+          setCurrentSegmentIndex(found);
         }
 
         // Check if playback is done
@@ -133,7 +140,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         };
       }
     },
-    [getAudioContext, stopAllNodes],
+    [getAudioContext, stopAllNodes, setCurrentSegmentIndex],
   );
 
   const pause = useCallback(() => {
@@ -141,6 +148,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     if (ctx && ctx.state === "running") {
       ctx.suspend();
       setIsPlaying(false);
+      setIsPaused(true);
     }
   }, []);
 
@@ -149,20 +157,24 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     if (ctx && ctx.state === "suspended") {
       ctx.resume();
       setIsPlaying(true);
+      setIsPaused(false);
     }
   }, []);
 
   const stop = useCallback(() => {
     stopAllNodes();
     setIsPlaying(false);
+    setIsPaused(false);
     setCurrentSegment(0);
-  }, [stopAllNodes]);
+    setCurrentSegmentIndex(0);
+  }, [stopAllNodes, setCurrentSegmentIndex]);
 
   const seekToSegment = useCallback(
     (index: number) => {
       setCurrentSegment(index);
+      setCurrentSegmentIndex(index);
     },
-    [],
+    [setCurrentSegmentIndex],
   );
 
   useEffect(() => {
@@ -180,6 +192,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     stop,
     seekToSegment,
     isPlaying,
+    isPaused,
     currentSegment,
     isLoaded,
   };
