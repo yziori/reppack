@@ -17,6 +17,7 @@ function App() {
   const pauseDurationMs = useAppStore((s) => s.pauseDurationMs);
   const sidecarStatus = useAppStore((s) => s.sidecarStatus);
   const setSidecarStatus = useAppStore((s) => s.setSidecarStatus);
+  const setProcessingProgress = useAppStore((s) => s.setProcessingProgress);
 
   const { start: startSidecar } = useSidecar();
   const player = useAudioPlayer();
@@ -24,16 +25,19 @@ function App() {
   const handleTranscribe = useCallback(async () => {
     if (!sourceFilePath) return;
 
-    if (sidecarStatus !== "ready") {
-      await startSidecar();
-      // Wait a moment for sidecar to initialize
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+    try {
+      if (sidecarStatus !== "ready") {
+        await startSidecar();
+      }
 
-    setSidecarStatus("processing");
-    await requestTranscription(sourceFilePath);
-    await player.load(sourceFilePath);
-  }, [sourceFilePath, sidecarStatus, startSidecar, setSidecarStatus, player]);
+      setSidecarStatus("processing");
+      setProcessingProgress(0, "Starting transcription...");
+      await requestTranscription(sourceFilePath);
+      await player.load(sourceFilePath);
+    } catch (e) {
+      console.error("Transcription failed:", e);
+    }
+  }, [sourceFilePath, sidecarStatus, startSidecar, setSidecarStatus, setProcessingProgress, player]);
 
   const handlePlay = useCallback(() => {
     player.playWithGaps(segments, pauseDurationMs);

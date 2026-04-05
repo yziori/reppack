@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useAppStore } from "../stores/appStore";
 import { startSidecar, stopSidecar } from "../lib/tauriCommands";
@@ -16,6 +16,9 @@ export function useSidecar() {
   const setProcessingProgress = useAppStore((s) => s.setProcessingProgress);
   const setExporting = useAppStore((s) => s.setExporting);
 
+  // ready待ちのためのresolverを保持
+  const readyResolverRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     const unlistenOutput = listen<SidecarResponse>(
       "sidecar-output",
@@ -24,6 +27,11 @@ export function useSidecar() {
 
         if (response.id === "init" && response.status === "ready") {
           setSidecarStatus("ready");
+          // readyを待っているPromiseを解決
+          if (readyResolverRef.current) {
+            readyResolverRef.current();
+            readyResolverRef.current = null;
+          }
           return;
         }
 
@@ -31,7 +39,17 @@ export function useSidecar() {
           const payload = response.payload;
           const percent = (payload.percent as number) ?? 0;
           const message = (payload.message as string) ?? "";
-          setProcessingProgress(percent, message);
+          // transcribeのprogressはpercentがないのでsegments_so_farから推定
+          if (percent === 0 && payload.segments_so_far != null) {
+            const segmentsSoFar = payload.segments_so_far as number;
+            const latestText = (payload.latest_text as string) ?? "";
+            setProcessingProgress(
+              Math.min(segmentsSoFar * 2, 95),
+              `Segment ${segmentsSoFar}: ${latestText}`,
+            );
+          } else {
+            setProcessingProgress(percent, message);
+          }
         }
 
         if (response.status === "success" && response.payload.segments) {
@@ -46,11 +64,13 @@ export function useSidecar() {
           response.payload.output_path
         ) {
           setExporting(false);
+          setSidecarStatus("ready");
           setProcessingProgress(0, "");
         }
 
         if (response.status === "error") {
           setSidecarStatus("error");
+          setExporting(false);
           setProcessingProgress(
             0,
             (response.payload.message as string) ?? "Unknown error",
@@ -73,6 +93,16 @@ export function useSidecar() {
     setSidecarStatus("starting");
     try {
       await startSidecar();
+      // readyイベントをPromiseで待つ（タイムアウト10秒）
+      await new Promise<void>((resolve, reject) => {
+        readyResolverRef.current = resolve;
+        setTimeout(() => {
+          if (readyResolverRef.current) {
+            readyResolverRef.current = null;
+            reject(new Error("Sidecar ready timeout"));
+          }
+        }, 10000);
+      });
     } catch (e) {
       setSidecarStatus("error");
       throw e;
