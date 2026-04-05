@@ -1,17 +1,21 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useCallback } from "react";
-import { useAppStore } from "./stores/appStore";
-import { useAudioPlayer } from "./hooks/useAudioPlayer";
-import { useSidecar } from "./hooks/useSidecar";
-import { requestTranscription } from "./lib/tauriCommands";
-import { FileImport } from "./components/FileImport";
-import { SegmentList } from "./components/SegmentList";
-import { Player } from "./components/Player";
-import { PauseControl } from "./components/PauseControl";
-import { ExportButton } from "./components/ExportButton";
-import { ProgressOverlay } from "./components/ProgressOverlay";
+import { useAppStore } from "../stores/appStore";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import { useSidecar } from "../hooks/useSidecar";
+import { requestTranscription } from "../lib/tauriCommands";
+import { FileImport } from "../components/FileImport";
+import { SegmentList } from "../components/SegmentList";
+import { Player } from "../components/Player";
+import { PauseControl } from "../components/PauseControl";
+import { ExportButton } from "../components/ExportButton";
 import { Mic } from "lucide-react";
 
-function App() {
+export const Route = createFileRoute("/")({
+  component: IndexPage,
+});
+
+function IndexPage() {
   const sourceFilePath = useAppStore((s) => s.sourceFilePath);
   const segments = useAppStore((s) => s.segments);
   const pauseDurationMs = useAppStore((s) => s.pauseDurationMs);
@@ -46,7 +50,7 @@ function App() {
   }, [player, segments, pauseDurationMs]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-gray-950 text-white">
+    <>
       {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -94,11 +98,6 @@ function App() {
         {/* Segment List */}
         <SegmentList onSegmentClick={player.seekToSegment} />
       </div>
-
-      {/* Progress Overlay */}
-      <ProgressOverlay />
-    </main>
+    </>
   );
 }
-
-export default App;

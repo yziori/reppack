@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/react-router": "^1.168.10",
+    "@tanstack/react-router-with-query": "^1.130.17",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-fs": "^2.5.0",
@@ -28,6 +30,7 @@
     ]
   },
   "devDependencies": {
+    "@tanstack/router-plugin": "^1.167.12",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
