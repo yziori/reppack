@@ -5,9 +5,29 @@ export function ProgressOverlay() {
   const progress = useAppStore((s) => s.processingProgress);
   const message = useAppStore((s) => s.processingMessage);
   const isExporting = useAppStore((s) => s.isExporting);
+  const setSidecarStatus = useAppStore((s) => s.setSidecarStatus);
 
-  const isVisible = sidecarStatus === "processing" || isExporting;
-  if (!isVisible) return null;
+  const isError = sidecarStatus === "error" && message;
+  const isProcessing = sidecarStatus === "processing" || isExporting;
+
+  if (!isProcessing && !isError) return null;
+
+  if (isError) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="w-96 rounded-xl bg-gray-900 p-6 shadow-2xl">
+          <p className="mb-3 text-sm font-medium text-red-400">Error</p>
+          <p className="mb-4 text-sm text-gray-300 break-words">{message}</p>
+          <button
+            className="w-full rounded-lg bg-gray-700 px-4 py-2 text-sm text-white hover:bg-gray-600"
+            onClick={() => setSidecarStatus("idle")}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">

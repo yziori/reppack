@@ -92,8 +92,14 @@ export function useSidecar() {
   const start = async () => {
     setSidecarStatus("starting");
     try {
+      // 前回のプロセスが残っている場合はクリーンアップ
+      try {
+        await stopSidecar();
+      } catch {
+        // 停止失敗は無視（既に停止済みの場合）
+      }
       await startSidecar();
-      // readyイベントをPromiseで待つ（タイムアウト10秒）
+      // readyイベントをPromiseで待つ（タイムアウト30秒）
       await new Promise<void>((resolve, reject) => {
         readyResolverRef.current = resolve;
         setTimeout(() => {
@@ -101,7 +107,7 @@ export function useSidecar() {
             readyResolverRef.current = null;
             reject(new Error("Sidecar ready timeout"));
           }
-        }, 10000);
+        }, 30000);
       });
     } catch (e) {
       setSidecarStatus("error");

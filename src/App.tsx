@@ -36,6 +36,8 @@ function App() {
       await player.load(sourceFilePath);
     } catch (e) {
       console.error("Transcription failed:", e);
+      setSidecarStatus("error");
+      setProcessingProgress(0, String(e));
     }
   }, [sourceFilePath, sidecarStatus, startSidecar, setSidecarStatus, setProcessingProgress, player]);
 

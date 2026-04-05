@@ -33,17 +33,36 @@ impl SidecarManager {
             .map(|d| d.join("python-sidecar"))
             .filter(|d| d.join("reppack_sidecar").exists())
             .or_else(|| {
-                std::env::current_dir()
-                    .ok()
-                    .map(|d| d.join("python-sidecar"))
-                    .filter(|d| d.join("reppack_sidecar").exists())
+                // 開発時: current_dir は src-tauri/ の場合があるので親も探す
+                std::env::current_dir().ok().and_then(|d| {
+                    let candidate = d.join("python-sidecar");
+                    if candidate.join("reppack_sidecar").exists() {
+                        return Some(candidate);
+                    }
+                    // 親ディレクトリ (プロジェクトルート) を確認
+                    if let Some(parent) = d.parent() {
+                        let candidate = parent.join("python-sidecar");
+                        if candidate.join("reppack_sidecar").exists() {
+                            return Some(candidate);
+                        }
+                    }
+                    None
+                })
             })
             .ok_or("Python sidecar directory not found")?;
 
+        // venv があればそのpythonを使う、なければシステムのpython3
+        let venv_python = sidecar_dir.join(".venv").join("bin").join("python3");
+        let python_cmd = if venv_python.exists() {
+            venv_python.to_string_lossy().to_string()
+        } else {
+            "python3".to_string()
+        };
+
         let (mut rx, child) = shell
-            .command("python3")
+            .command(&python_cmd)
             .args(["-m", "reppack_sidecar"])
-            .current_dir(sidecar_dir)
+            .current_dir(&sidecar_dir)
             .spawn()
             .map_err(|e| format!("Failed to spawn sidecar: {}", e))?;
 

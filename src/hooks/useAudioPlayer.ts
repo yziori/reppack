@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { readFile } from "@tauri-apps/plugin-fs";
 import type { Segment } from "../lib/types";
 import { useAppStore } from "../stores/appStore";
 
@@ -57,10 +57,8 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const load = useCallback(
     async (filePath: string) => {
       const ctx = getAudioContext();
-      const url = convertFileSrc(filePath);
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      audioBufferRef.current = await ctx.decodeAudioData(arrayBuffer);
+      const bytes = await readFile(filePath);
+      audioBufferRef.current = await ctx.decodeAudioData(bytes.buffer);
       setIsLoaded(true);
     },
     [getAudioContext],
