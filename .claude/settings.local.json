@@ -13,7 +13,11 @@
       "Bash(xargs kill:*)",
       "Bash(say -v '?')",
       "Bash(ffmpeg -y -i /tmp/reppack_sample.aiff -codec:a libmp3lame -qscale:a 2 /Users/taktadano/ghq/github.com/yziori/reppack/public/sample.mp3)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "Bash(git push:*)"
     ],
     "additionalDirectories": [
       "/private/tmp"
