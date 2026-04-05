@@ -1,4 +1,4 @@
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tokio::sync::Mutex;
@@ -23,11 +23,29 @@ impl SidecarManager {
         }
 
         let shell = app.shell();
+
+        // python-sidecar ディレクトリを解決
+        // 開発時: プロジェクトルートの python-sidecar/
+        // ビルド時: リソースディレクトリの python-sidecar/
+        let resource_dir = app.path().resource_dir().ok();
+        let sidecar_dir = resource_dir
+            .as_ref()
+            .map(|d| d.join("python-sidecar"))
+            .filter(|d| d.join("reppack_sidecar").exists())
+            .or_else(|| {
+                std::env::current_dir()
+                    .ok()
+                    .map(|d| d.join("python-sidecar"))
+                    .filter(|d| d.join("reppack_sidecar").exists())
+            })
+            .ok_or("Python sidecar directory not found")?;
+
         let (mut rx, child) = shell
-            .sidecar("binaries/reppack-sidecar")
-            .map_err(|e| e.to_string())?
+            .command("python3")
+            .args(["-m", "reppack_sidecar"])
+            .current_dir(sidecar_dir)
             .spawn()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| format!("Failed to spawn sidecar: {}", e))?;
 
         *guard = Some(child);
         drop(guard);
