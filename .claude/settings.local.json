@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm create:*)",
+      "Bash(cp -r reppack-temp/src-tauri .)",
+      "Bash(cp -r reppack-temp/src .)",
+      "Bash(cp -r reppack-temp/public .)",
+      "Bash(cp reppack-temp/.vscode .)",
+      "Bash(pnpm install:*)",
+      "Bash(npx --yes esbuild --version)",
+      "Bash(pnpm rebuild:*)",
+      "Bash(pnpm add:*)",
+      "Bash(xargs kill:*)",
+      "Bash(say -v '?')",
+      "Bash(ffmpeg -y -i /tmp/reppack_sample.aiff -codec:a libmp3lame -qscale:a 2 /Users/taktadano/ghq/github.com/yziori/reppack/public/sample.mp3)",
+      "Bash(git add:*)"
+    ],
+    "additionalDirectories": [
+      "/private/tmp"
+    ]
+  }
+}
