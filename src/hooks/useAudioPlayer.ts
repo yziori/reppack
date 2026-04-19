@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readFile } from "@tauri-apps/plugin-fs";
 import type { Segment } from "../lib/types";
-import { useAppStore } from "../stores/appStore";
 
 interface UseAudioPlayerReturn {
   load: (filePath: string) => Promise<void>;
@@ -28,8 +27,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const [isPaused, setIsPaused] = useState(false);
   const [currentSegment, setCurrentSegment] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  const setCurrentSegmentIndex = useAppStore((s) => s.setCurrentSegmentIndex);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -113,7 +110,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         }
         if (found >= 0) {
           setCurrentSegment(found);
-          setCurrentSegmentIndex(found);
         }
 
         // Check if playback is done
@@ -138,7 +134,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         };
       }
     },
-    [getAudioContext, stopAllNodes, setCurrentSegmentIndex],
+    [getAudioContext, stopAllNodes],
   );
 
   const pause = useCallback(() => {
@@ -164,16 +160,11 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     setIsPlaying(false);
     setIsPaused(false);
     setCurrentSegment(0);
-    setCurrentSegmentIndex(0);
-  }, [stopAllNodes, setCurrentSegmentIndex]);
+  }, [stopAllNodes]);
 
-  const seekToSegment = useCallback(
-    (index: number) => {
-      setCurrentSegment(index);
-      setCurrentSegmentIndex(index);
-    },
-    [setCurrentSegmentIndex],
-  );
+  const seekToSegment = useCallback((index: number) => {
+    setCurrentSegment(index);
+  }, []);
 
   useEffect(() => {
     return () => {

@@ -1,5 +1,4 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { ProgressOverlay } from "../components/ProgressOverlay";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -7,9 +6,8 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <main className="flex min-h-screen flex-col bg-gray-950 text-white">
+    <main className="flex h-screen flex-col bg-paper-1">
       <Outlet />
-      <ProgressOverlay />
     </main>
   );
 }
