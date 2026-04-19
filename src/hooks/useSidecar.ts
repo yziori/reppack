@@ -39,16 +39,12 @@ export function useSidecar() {
           const payload = response.payload;
           const percent = (payload.percent as number) ?? 0;
           const message = (payload.message as string) ?? "";
-          // transcribeのprogressはpercentがないのでsegments_so_farから推定
-          if (percent === 0 && payload.segments_so_far != null) {
-            const segmentsSoFar = payload.segments_so_far as number;
-            const latestText = (payload.latest_text as string) ?? "";
-            setProcessingProgress(
-              Math.min(segmentsSoFar * 2, 95),
-              `Segment ${segmentsSoFar}: ${latestText}`,
-            );
-          } else {
-            setProcessingProgress(percent, message);
+          const phase = payload.phase as 0 | 1 | undefined;
+          const latestText = payload.latest_text as string | undefined;
+
+          setProcessingProgress(percent, message, phase);
+          if (latestText) {
+            useAppStore.getState().setLatestTranscript(latestText);
           }
         }
 
