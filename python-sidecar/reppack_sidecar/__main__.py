@@ -50,7 +50,9 @@ def main() -> None:
                 for update in insert_pauses(
                     request.payload["file_path"],
                     request.payload["segments"],
-                    request.payload["pause_ms"],
+                    request.payload["cfg"],
+                    request.payload["format"],
+                    request.payload["bitrate_kbps"],
                     request.payload["output_path"],
                 ):
                     send_response({"id": request.id, **update})
