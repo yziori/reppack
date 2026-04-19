@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Segment } from "./types";
+import type { Cfg, ExportOptions, FileMeta, Segment } from "./types";
 
 export interface AudioFileInfo {
   path: string;
   name: string;
+  meta: FileMeta;
 }
 
 export async function importAudio(path: string): Promise<AudioFileInfo> {
@@ -25,16 +26,22 @@ export async function requestTranscription(
   return invoke("request_transcription", { filePath, language });
 }
 
-export async function requestExport(
-  filePath: string,
-  segments: Segment[],
-  pauseMs: number,
-  outputPath: string,
-): Promise<void> {
+export interface ExportRequest {
+  filePath: string;
+  segments: Segment[];
+  cfg: Cfg;
+  format: ExportOptions["format"];
+  bitrateKbps: number;
+  outputPath: string;
+}
+
+export async function requestExport(req: ExportRequest): Promise<void> {
   return invoke("request_export", {
-    filePath,
-    segments,
-    pauseMs,
-    outputPath,
+    filePath: req.filePath,
+    segments: req.segments,
+    cfg: req.cfg,
+    format: req.format,
+    bitrateKbps: req.bitrateKbps,
+    outputPath: req.outputPath,
   });
 }
