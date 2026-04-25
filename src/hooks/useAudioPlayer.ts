@@ -4,7 +4,7 @@ import type { Segment } from "../lib/types";
 
 interface UseAudioPlayerReturn {
   load: (filePath: string) => Promise<void>;
-  playWithGaps: (segments: Segment[], pauseMs: number) => void;
+  playWithGaps: (segments: Segment[], pauseMs: number) => Promise<void>;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -18,6 +18,7 @@ interface UseAudioPlayerReturn {
 export function useAudioPlayer(): UseAudioPlayerReturn {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
+  const sourceBytesRef = useRef<ArrayBuffer | null>(null);
   const scheduledNodesRef = useRef<AudioBufferSourceNode[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const playStartTimeRef = useRef<number>(0);
@@ -27,13 +28,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const [isPaused, setIsPaused] = useState(false);
   const [currentSegment, setCurrentSegment] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  const getAudioContext = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
-    }
-    return audioContextRef.current;
-  }, []);
 
   const stopAllNodes = useCallback(() => {
     scheduledNodesRef.current.forEach((node) => {
@@ -51,20 +45,35 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     }
   }, []);
 
-  const load = useCallback(
-    async (filePath: string) => {
-      const ctx = getAudioContext();
-      const bytes = await readFile(filePath);
-      audioBufferRef.current = await ctx.decodeAudioData(bytes.buffer);
-      setIsLoaded(true);
-    },
-    [getAudioContext],
-  );
+  const load = useCallback(async (filePath: string) => {
+    const bytes = await readFile(filePath);
+    sourceBytesRef.current = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength,
+    );
+    audioBufferRef.current = null;
+    setIsLoaded(true);
+  }, []);
+
+  const ensureContextAndBuffer = useCallback(async () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+    const ctx = audioContextRef.current;
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+    if (!audioBufferRef.current && sourceBytesRef.current) {
+      audioBufferRef.current = await ctx.decodeAudioData(
+        sourceBytesRef.current.slice(0),
+      );
+    }
+    return { ctx, buffer: audioBufferRef.current };
+  }, []);
 
   const playWithGaps = useCallback(
-    (segments: Segment[], pauseMs: number) => {
-      const ctx = getAudioContext();
-      const buffer = audioBufferRef.current;
+    async (segments: Segment[], pauseMs: number) => {
+      const { ctx, buffer } = await ensureContextAndBuffer();
       if (!buffer) return;
 
       stopAllNodes();
@@ -97,7 +106,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       setIsPaused(false);
       setCurrentSegment(0);
 
-      // Track current segment
       const trackSegment = () => {
         const elapsed = ctx.currentTime - playStartTimeRef.current;
         const timings = segmentTimingsRef.current;
@@ -112,7 +120,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
           setCurrentSegment(found);
         }
 
-        // Check if playback is done
         const lastTiming = timings[timings.length - 1];
         if (lastTiming && elapsed > lastTiming.end) {
           setIsPlaying(false);
@@ -123,7 +130,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       };
       animationFrameRef.current = requestAnimationFrame(trackSegment);
 
-      // Auto-stop when last node ends
       const lastNode = nodes[nodes.length - 1];
       if (lastNode) {
         lastNode.onended = () => {
@@ -134,7 +140,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         };
       }
     },
-    [getAudioContext, stopAllNodes],
+    [ensureContextAndBuffer, stopAllNodes],
   );
 
   const pause = useCallback(() => {

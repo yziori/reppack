@@ -141,7 +141,11 @@ export function StepExport() {
           cfg={cfg}
           segments={segments}
           isPlaying={player.isPlaying}
-          onPlay={() => player.playWithGaps(segments, pauseMsFromCfg)}
+          onPlay={() => {
+            player
+              .playWithGaps(segments, pauseMsFromCfg)
+              .catch((e) => console.error("[audio] play failed:", e));
+          }}
           onPause={player.pause}
         />
         <div>
