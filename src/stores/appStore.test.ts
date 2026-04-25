@@ -99,5 +99,37 @@ describe("appStore", () => {
       expect(state.transcribePhase).toBe(0);
       expect(state.selectedSegmentId).toBeNull();
     });
+
+    it("setSourceFile resets derived state from previous source", () => {
+      const s = useAppStore.getState();
+      s.setSourceFile("/tmp/a.mp3", "a.mp3", {
+        durationSec: 60,
+        sizeBytes: 1024,
+        sampleRateHz: 44100,
+        channels: 2,
+      });
+      s.setSegments([{ id: 1, start: 0, end: 1, text: "hi" }]);
+      s.setLatestTranscript("hi");
+      s.setProcessingProgress(50, "halfway", 1);
+      s.selectSegment(1);
+
+      s.setSourceFile("/tmp/b.mp3", "b.mp3", {
+        durationSec: 30,
+        sizeBytes: 512,
+        sampleRateHz: 48000,
+        channels: 1,
+      });
+
+      const state = useAppStore.getState();
+      expect(state.sourceFilePath).toBe("/tmp/b.mp3");
+      expect(state.sourceFileName).toBe("b.mp3");
+      expect(state.fileMeta?.durationSec).toBe(30);
+      expect(state.segments).toEqual([]);
+      expect(state.latestTranscript).toBe("");
+      expect(state.processingProgress).toBe(0);
+      expect(state.processingMessage).toBe("");
+      expect(state.transcribePhase).toBe(0);
+      expect(state.selectedSegmentId).toBeNull();
+    });
   });
 });
