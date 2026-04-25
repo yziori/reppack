@@ -100,7 +100,17 @@ export const useAppStore = create<AppState>()((set) => ({
     set({ sourceFilePath: path, sourceFileName: name, fileMeta: meta }),
 
   clearSourceFile: () =>
-    set({ sourceFilePath: null, sourceFileName: null, fileMeta: null }),
+    set({
+      sourceFilePath: null,
+      sourceFileName: null,
+      fileMeta: null,
+      segments: [],
+      latestTranscript: "",
+      processingProgress: 0,
+      processingMessage: "",
+      transcribePhase: 0,
+      selectedSegmentId: null,
+    }),
 
   setSourceLang: (lang) => set({ sourceLang: lang }),
 
