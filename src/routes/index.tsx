@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useAppStore } from "../stores/appStore";
-import { MacWindow } from "../components/wizard/MacWindow";
+import { TitleBar } from "../components/wizard/TitleBar";
 import { Sidebar } from "../components/wizard/Sidebar";
 import { StepImport } from "../features/StepImport";
 import { StepTranscribe } from "../features/StepTranscribe";
@@ -14,6 +15,10 @@ import type { WizardStep } from "../lib/types";
 export const Route = createFileRoute("/")({
   component: IndexPage,
 });
+
+const isMac =
+  typeof navigator !== "undefined" &&
+  /Mac/i.test(navigator.platform || navigator.userAgent);
 
 function IndexPage() {
   const step = useAppStore((s) => s.step);
@@ -32,6 +37,10 @@ function IndexPage() {
 
   const title = `${t.appTitle}${sourceFileName ? ` — ${sourceFileName}` : ""}`;
 
+  useEffect(() => {
+    getCurrentWindow().setTitle(title).catch(() => {});
+  }, [title]);
+
   const stepCmp = [
     <StepImport key={0} />,
     <StepTranscribe key={1} />,
@@ -41,11 +50,12 @@ function IndexPage() {
   ][step];
 
   return (
-    <div className="h-full p-6">
-      <MacWindow title={title}>
+    <>
+      {isMac && <TitleBar title={title} />}
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar current={step} onStep={setStep} />
         {stepCmp}
-      </MacWindow>
-    </div>
+      </div>
+    </>
   );
 }
